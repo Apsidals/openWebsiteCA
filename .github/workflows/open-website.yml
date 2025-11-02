@@ -16,7 +16,7 @@ jobs:
       # IMPORTANT: Change this URL to the website you want to open.
       TARGET_URL: "https://atpmatchpredictions.vercel.app/"
       # The maximum random delay in seconds (8 minutes = 480 seconds ).
-      MAX_DELAY_SECONDS: 480
+      MAX_DELAY_SECONDS: 10
 
     steps:
       # Step 1: Wait for a random amount of time.
