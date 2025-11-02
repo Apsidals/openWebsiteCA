@@ -1,0 +1,10 @@
+{
+  "name": "scheduled-site-visit",
+  "version": "1.0.0",
+  "description": "A script to visit a website using Playwright to trigger analytics.",
+  "main": "open-site.js",
+  "private": true,
+  "dependencies": {
+    "playwright": "^1.44.0"
+  }
+}

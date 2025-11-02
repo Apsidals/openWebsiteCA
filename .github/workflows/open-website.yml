@@ -1,55 +1,66 @@
-  # .github/workflows/open-website.yml
+# .github/workflows/open-website.yml
 
-name: Open Website Periodically
+name: Open Website with Browser
 
-# This section defines the trigger for the workflow.
 on:
-  # 1. Run on a schedule (cron job)
   schedule:
-    # Runs every 10 minutes. The minimum interval is 5 minutes.
+    # Runs every 10 minutes.
     - cron: '*/10 * * * *'
+  workflow_dispatch: # Allows manual runs
 
-  # 2. Allow manual runs from the GitHub Actions tab
-  # This is useful for testing.
-  workflow_dispatch:
-
-# This section defines the job(s) to be run.
 jobs:
-  open-site:
-    # Use the latest version of Ubuntu as the operating system for our runner.
+  visit-site:
     runs-on: ubuntu-latest
 
-    # Define environment variables for this job.
     env:
       # IMPORTANT: Change this URL to the website you want to open.
       TARGET_URL: "https://atpmatchpredictions.vercel.app/"
       # The maximum random delay in seconds (8 minutes = 480 seconds ).
       MAX_DELAY_SECONDS: 480
 
-    # The steps that make up the job.
     steps:
       # Step 1: Wait for a random amount of time.
       - name: Wait for a random delay (0-8 minutes)
         run: |
-          # Generate a random number between 0 and MAX_DELAY_SECONDS.
           DELAY=$(( RANDOM % (MAX_DELAY_SECONDS + 1) ))
-          
-          # Convert seconds to minutes/seconds for a nice log message.
           MINUTES=$(( DELAY / 60 ))
           SECONDS=$(( DELAY % 60 ))
-          
-          echo "Action scheduled. Waiting for ${MINUTES}m ${SECONDS}s before accessing the site..."
+          echo "Action scheduled. Waiting for ${MINUTES}m ${SECONDS}s..."
           sleep $DELAY
 
-      # Step 2: Access the website using curl.
-      - name: Access the target website
-        run: |
-          echo "Accessing URL: ${{ env.TARGET_URL }}"
-          
-          # Use curl to make a request to the website.
-          # The '-s' flag makes it silent (no progress meter).
-          # The '-o /dev/null' part discards the website's content, so it doesn't fill up your logs.
-          # The '-L' flag follows any redirects (like http to https ).
-          curl -s -L -o /dev/null "${{ env.TARGET_URL }}"
-          
-          echo "Website accessed successfully."
+      # Step 2: Check out the repository code.
+      # This makes our local files (like open-site.js) available to the workflow.
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      # Step 3: Set up Node.js environment.
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Use a stable LTS version of Node.js
+          cache: 'npm' # Cache npm dependencies for faster installs
+
+      # Step 4: Install project dependencies (Playwright).
+      # This command reads package.json and installs what's needed.
+      - name: Install dependencies
+        run: npm install
+
+      # Step 5: Install Playwright browsers.
+      # This is a required step to download the browser binaries (Chromium).
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      # Step 6: Run the Playwright script.
+      # The TARGET_URL env var is automatically passed to the script.
+      - name: Run Playwright script to visit site
+        run: node open-site.js
+
+      # Step 7 (Optional): Upload the screenshot as an artifact.
+      # This lets you download and view the screenshot from the workflow run summary page.
+      - name: Upload screenshot artifact
+        if: always() # Run this step even if the script fails
+        uses: actions/upload-artifact@v4
+        with:
+          name: website-screenshot
+          path: visit-screenshot.png
+          retention-days: 5 # Keep artifacts for 5 days
