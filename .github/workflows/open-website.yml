@@ -1,0 +1,55 @@
+  # .github/workflows/open-website.yml
+
+name: Open Website Periodically
+
+# This section defines the trigger for the workflow.
+on:
+  # 1. Run on a schedule (cron job)
+  schedule:
+    # Runs every 10 minutes. The minimum interval is 5 minutes.
+    - cron: '*/10 * * * *'
+
+  # 2. Allow manual runs from the GitHub Actions tab
+  # This is useful for testing.
+  workflow_dispatch:
+
+# This section defines the job(s) to be run.
+jobs:
+  open-site:
+    # Use the latest version of Ubuntu as the operating system for our runner.
+    runs-on: ubuntu-latest
+
+    # Define environment variables for this job.
+    env:
+      # IMPORTANT: Change this URL to the website you want to open.
+      TARGET_URL: "https://atpmatchpredictions.vercel.app/"
+      # The maximum random delay in seconds (8 minutes = 480 seconds ).
+      MAX_DELAY_SECONDS: 480
+
+    # The steps that make up the job.
+    steps:
+      # Step 1: Wait for a random amount of time.
+      - name: Wait for a random delay (0-8 minutes)
+        run: |
+          # Generate a random number between 0 and MAX_DELAY_SECONDS.
+          DELAY=$(( RANDOM % (MAX_DELAY_SECONDS + 1) ))
+          
+          # Convert seconds to minutes/seconds for a nice log message.
+          MINUTES=$(( DELAY / 60 ))
+          SECONDS=$(( DELAY % 60 ))
+          
+          echo "Action scheduled. Waiting for ${MINUTES}m ${SECONDS}s before accessing the site..."
+          sleep $DELAY
+
+      # Step 2: Access the website using curl.
+      - name: Access the target website
+        run: |
+          echo "Accessing URL: ${{ env.TARGET_URL }}"
+          
+          # Use curl to make a request to the website.
+          # The '-s' flag makes it silent (no progress meter).
+          # The '-o /dev/null' part discards the website's content, so it doesn't fill up your logs.
+          # The '-L' flag follows any redirects (like http to https ).
+          curl -s -L -o /dev/null "${{ env.TARGET_URL }}"
+          
+          echo "Website accessed successfully."
